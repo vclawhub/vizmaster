@@ -1,0 +1,145 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ComponentType } from 'react';
+
+import { isTutorialModule } from './lib/tutorial';
+import type { TutorialKind, TutorialMeta, TutorialModule } from './lib/tutorial';
+
+/**
+ * The shell owns navigation only. Tutorials are discovered from the file
+ * system, so `npm run dev` picks up a tutorial the moment one is written into
+ * `src/tutorials/` — including files produced by the OMP tools in
+ * `src/tools/math-renderer.ts`.
+ */
+const discovered = import.meta.glob<unknown>('./tutorials/*.tsx', { eager: true });
+
+interface CatalogEntry {
+  path: string;
+  meta: TutorialMeta;
+  Component: ComponentType;
+}
+
+const KIND_LABEL: Record<TutorialKind, string> = {
+  elucim: 'Elucim 2D',
+  vectorplay: 'VectorPlay 3D',
+  three: 'Three.js 3D',
+};
+
+const catalog: CatalogEntry[] = Object.entries(discovered)
+  .filter((entry): entry is [string, TutorialModule] => isTutorialModule(entry[1]))
+  .map(([path, mod]) => ({ path, meta: mod.tutorial, Component: mod.default }))
+  .sort((a, b) => (a.meta.order ?? 50) - (b.meta.order ?? 50) || a.meta.title.localeCompare(b.meta.title));
+
+/** Reads `#/<id>` and keeps React in sync with the address bar. */
+function useHashRoute(fallbackId: string): [string, (id: string) => void] {
+  const read = useCallback((): string => {
+    const raw = window.location.hash.replace(/^#\/?/, '');
+    const id = decodeURIComponent(raw);
+    return id.length > 0 ? id : fallbackId;
+  }, [fallbackId]);
+
+  const [route, setRoute] = useState(read);
+
+  useEffect(() => {
+    const onHashChange = () => setRoute(read());
+    window.addEventListener('hashchange', onHashChange);
+    // Normalize the URL on first paint so a reload lands on the same tutorial.
+    if (window.location.hash.replace(/^#\/?/, '') === '' && fallbackId !== '') {
+      window.history.replaceState(null, '', `#/${fallbackId}`);
+    }
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [read, fallbackId]);
+
+  const navigate = useCallback((id: string) => {
+    window.location.hash = `#/${id}`;
+  }, []);
+
+  return [route, navigate];
+}
+
+export default function App() {
+  const ids = useMemo(() => catalog.map((entry) => entry.meta.id), []);
+  const [route, navigate] = useHashRoute(ids[0] ?? '');
+
+  const active = catalog.find((entry) => entry.meta.id === route) ?? catalog[0];
+
+  if (!catalog.length) {
+    return (
+      <main className="main">
+        <p className="empty">No tutorials found in <code>src/tutorials/</code>.</p>
+      </main>
+    );
+  }
+
+  if (!active) {
+    return (
+      <main className="main">
+        <p className="empty">
+          No tutorial matches <code>#{route}</code>.{' '}
+          <button type="button" className="link" onClick={() => navigate(catalog[0]!.meta.id)}>
+            Open {catalog[0]!.meta.title}
+          </button>
+        </p>
+      </main>
+    );
+  }
+
+  return (
+    <div className="app">
+      <nav className="sidebar" aria-label="Tutorials">
+        <header className="sidebar-head">
+          <h1>VizMaster</h1>
+          <p className="tagline">Animated math, 2D and 3D</p>
+        </header>
+        <ul className="nav-list">
+          {catalog.map((entry) => {
+            const isActive = entry.meta.id === active.meta.id;
+            return (
+              <li key={entry.meta.id}>
+                <a
+                  className={isActive ? 'nav-item nav-item-active' : 'nav-item'}
+                  href={`#/${entry.meta.id}`}
+                  aria-current={isActive ? 'page' : undefined}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    navigate(entry.meta.id);
+                  }}
+                >
+                  <span className="nav-title">{entry.meta.title}</span>
+                  <span className="nav-blurb">{entry.meta.blurb}</span>
+                  <span className={`badge badge-${entry.meta.kind}`}>{KIND_LABEL[entry.meta.kind]}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+        <footer className="sidebar-foot">
+          <p>
+            Frames advance with the <strong>Player</strong> controls. Press <kbd>Space</kbd> to play or pause,{' '}
+            <kbd>←</kbd>/<kbd>→</kbd> to step a frame, <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> for ten, and{' '}
+            <kbd>Home</kbd>/<kbd>End</kbd> to jump.
+          </p>
+        </footer>
+      </nav>
+
+      <main className="main">
+        <TutorialHost key={active.meta.id} entry={active} />
+      </main>
+    </div>
+  );
+}
+
+/** Header plus the tutorial itself, remounted per tutorial id. */
+function TutorialHost({ entry }: { entry: CatalogEntry }) {
+  const { Component, meta } = entry;
+  return (
+    <>
+      <header className="tutorial-head">
+        <h2>{meta.title}</h2>
+        <span className={`badge badge-${meta.kind}`}>{KIND_LABEL[meta.kind]}</span>
+        {meta.generatedBy !== undefined && <span className="badge badge-generated">generated by {meta.generatedBy}</span>}
+        <p>{meta.blurb}</p>
+      </header>
+      <Component />
+    </>
+  );
+}

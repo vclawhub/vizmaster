@@ -1,0 +1,10 @@
+# Install output and build artifacts
+node_modules/
+dist/
+
+# Local tooling state
+.vite/
+*.local
+
+# macOS
+.DS_Store
