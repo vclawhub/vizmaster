@@ -18,7 +18,7 @@ Four tutorials ship today:
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173
+npm run dev
 ```
 
 Every tutorial is independently viewable at its own `#/route` and can be linked
