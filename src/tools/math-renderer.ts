@@ -508,10 +508,13 @@ function renderVectorSceneFile(input: VectorSceneInput): { fileName: string; con
     (vector, index) =>
       `      scene.frame.addVector({ x: ${vector.x}, y: ${vector.y}, z: ${vector.z} }, true, undefined, VECTOR_COLORS[${index}]);`,
   );
+  // Labels are data, never code: they reach the generated component only as
+  // braced string expressions (`literal` = JSON.stringify), so a label
+  // containing `<script>`, backticks, or `${…}` cannot become JSX markup.
   const readoutLines = input.vectors.flatMap((vector) => [
-    `          <dt>${vector.label}</dt>`,
+    `          <dt>{${literal(vector.label)}}</dt>`,
     `          <dd>(${vector.x}, ${vector.y}, ${vector.z})</dd>`,
-    `          <dt>|${vector.label}|</dt>`,
+    `          <dt>|{${literal(vector.label)}}</dt>`,
     `          <dd>${Math.hypot(vector.x, vector.y, vector.z).toFixed(3)}</dd>`,
   ]);
 

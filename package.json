@@ -22,7 +22,7 @@
   "license": "MIT",
   "dependencies": {
     "@elucim/core": "^0.24.0",
-    "katex": "^0.16.47",
+    "katex": "^0.18.2",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "three": "^0.180.0",
@@ -36,5 +36,8 @@
     "@vitejs/plugin-react": "^6.1.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.4"
+  },
+  "overrides": {
+    "katex": "^0.18.2"
   }
 }

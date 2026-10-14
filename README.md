@@ -35,6 +35,9 @@ npm run preview      # serve the production build
 npm run tools:smoke  # exercise the OMP tutorial generators (needs Bun)
 ```
 
+Verified with Node 22.22, npm 11.15, and Bun 1.4. Bun is only required for
+`npm run tools:smoke`; the app itself is plain Node plus a browser.
+
 ### Playback controls
 
 Elucim's `<Player>` owns the timeline: scrubber, play/pause, frame counter, and
@@ -216,6 +219,18 @@ vizmaster/
         ├── Vectors3D.tsx
         └── SolidGeometry.tsx
 ```
+
+## Using this repository with OMP
+
+Opening this repository as an OMP project auto-loads the three generator tools
+from `.omp/tools/`. They validate their inputs with the injected zod builder and
+write only into `src/tutorials/`; the constraints are spelled out in
+[SECURITY.md](SECURITY.md). Delete the `.omp/` directory if you would rather not
+load them.
+
+## License
+
+[MIT](LICENSE) © The VizMaster Authors
 
 ## Known tradeoffs
 

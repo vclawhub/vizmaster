@@ -48,20 +48,38 @@ interface Generated {
   contents: string;
 }
 
+// The SDK types `parameters` as its TSchema union while the runtime value is
+// omptype's zod builder; the compiler cannot express that union, so the cast is
+// pinned to one named constant with this reason.
+const parseableSchema = (tool: CustomTool): ParseableSchema =>
+  tool.parameters as unknown as ParseableSchema;
+
+// The smoke run has no session, and these tools deliberately ignore `ctx`.
+const isolatedContext = undefined as unknown as CustomToolContext;
+
 async function runTool(tool: CustomTool, input: unknown): Promise<Generated> {
-  const schema = tool.parameters as unknown as ParseableSchema;
-  const parsed = schema.safeParse(input);
+  const parsed = parseableSchema(tool).safeParse(input);
   if (!parsed.success) throw new Error(`schema rejected the input: ${parsed.error.message}`);
 
-  // The smoke run has no session, and these tools deliberately ignore `ctx`.
-  const result = await tool.execute('smoke', parsed.data, undefined, undefined as unknown as CustomToolContext);
-  const details = result.details as { relativePath?: string; absolutePath?: string } | undefined;
-  if (!details?.absolutePath || !details.relativePath) throw new Error('the tool did not report the file it wrote');
+  const result = await tool.execute('smoke', parsed.data, undefined, isolatedContext);
+  const details: unknown = result.details;
+  if (
+    typeof details !== 'object' ||
+    details === null ||
+    !('relativePath' in details) ||
+    !('absolutePath' in details)
+  ) {
+    throw new Error('the tool did not report the file it wrote');
+  }
+  const { relativePath, absolutePath } = details;
+  if (typeof relativePath !== 'string' || typeof absolutePath !== 'string') {
+    throw new Error('the tool reported a non-string path');
+  }
 
   return {
-    relativePath: details.relativePath,
-    absolutePath: details.absolutePath,
-    contents: await readFile(details.absolutePath, 'utf8'),
+    relativePath,
+    absolutePath,
+    contents: await readFile(absolutePath, 'utf8'),
   };
 }
 
