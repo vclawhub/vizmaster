@@ -12,6 +12,9 @@ VizMaster is a static, client-side application. The shipped bundle:
 
 - contains no secrets and reads none from the environment;
 - talks to no backend — the dev server and `vite preview` only serve assets;
+- ships no accounts, sessions, or auth code of its own: identity for the humans
+  and the OMP agents using it is issued by the VClaw IDP (OIDC) under the
+  `vcc` namespace of the [VClaw](https://vclawhub.com/) network;
 - renders all mathematics through React text nodes and KaTeX
   (`throwOnError`-safe markup generated from validated numbers and fixed
   strings), never through `innerHTML`.

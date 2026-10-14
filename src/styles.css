@@ -118,6 +118,17 @@ body {
   color: var(--text);
 }
 
+.sidebar-foot .ecosystem {
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.sidebar-foot .ecosystem a {
+  color: inherit;
+}
+
 .badge {
   justify-self: start;
   font-family: var(--mono);

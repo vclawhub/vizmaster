@@ -118,6 +118,9 @@ export default function App() {
             <kbd>←</kbd>/<kbd>→</kbd> to step a frame, <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> for ten, and{' '}
             <kbd>Home</kbd>/<kbd>End</kbd> to jump.
           </p>
+          <p className="ecosystem">
+            Part of the <a href="https://vclawhub.com/">VClaw</a> <code>vcc</code> network
+          </p>
         </footer>
       </nav>
 
